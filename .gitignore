@@ -12,6 +12,12 @@ venv/
 env/
 
 # ProjectSpark Data & Artifacts
-spark/ProjectSpark/data/
+# Allow data folder structure but ignore content
+spark/ProjectSpark/data/raw/*
+!spark/ProjectSpark/data/raw/.gitkeep
+spark/ProjectSpark/data/processed/*
+!spark/ProjectSpark/data/processed/.gitkeep
+
+# Ignore entire folders
 spark/ProjectSpark/Present/
 spark/ProjectSpark/AI_help/
