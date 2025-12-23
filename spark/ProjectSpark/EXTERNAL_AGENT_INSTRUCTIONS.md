@@ -5,7 +5,7 @@
 - **Hệ thống**: Jupyter Lab chạy trên Docker container.
 - **URL truy cập**: `http://192.168.1.12:8888` (hoặc `http://localhost:8888` nếu map port).
 - **Authentication Token**:
-    - Token hiện tại: `37d150a32566e4908d4b6b88f1e2b6e20fc192f5e9b0beeb`
+    - Token hiện tại: `37d150a32566e4908d4b6b88f1e2b6e20fc192f5e9b0beeb` (demo)
     - *Lưu ý*: Nếu Token không đúng, hãy yêu cầu người dùng chạy lệnh: `docker logs jupyter-notebook` trên server để lấy token mới.
 
 ## 2. Quy trình thực hiện (Step-by-Step Action Plan)
