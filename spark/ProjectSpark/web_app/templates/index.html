@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Analytics Platform</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* GitHub Dark High Contrast Theme */
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 12px 24px;
+        }
+
+        .brand-text {
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: #e6edf3;
+        }
+
+        .status-badge {
+            background: #21262d;
+            border: 1px solid #30363d;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #79c0ff;
+            font-weight: 500;
+        }
+
+        /* Cards */
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: #e6edf3;
+        }
+
+        .card-header {
+            background-color: #21262d;
+            border-bottom: 1px solid #30363d;
+            font-weight: 600;
+            color: #e6edf3;
+            padding: 12px 16px;
+        }
+
+        /* Tabs */
+        .nav-tabs {
+            border-bottom: 1px solid #30363d;
+        }
+
+        .nav-link {
+            color: #8b949e;
+            font-weight: 500;
+        }
+
+        .nav-link.active {
+            background-color: #161b22 !important;
+            color: #58a6ff !important;
+            border-color: #f78166 #161b22 #161b22 !important;
+            border-top: 3px solid #f78166 !important;
+        }
+
+        .nav-link:hover {
+            color: #e6edf3;
+        }
+
+        /* Interactive Elements */
+        .btn-github {
+            background-color: #238636;
+            color: white;
+            border: 1px solid rgba(240, 246, 252, 0.1);
+            font-weight: 600;
+            padding: 6px 16px;
+        }
+
+        .btn-github:hover {
+            background-color: #2ea043;
+            color: white;
+        }
+
+        .form-control {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+        }
+
+        .form-control:focus {
+            background-color: #0d1117;
+            border-color: #58a6ff;
+            color: #e6edf3;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+        }
+
+        /* Stats */
+        .stat-value {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #e6edf3;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #8b949e;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tables - Fixed Contrast */
+        table.dataTable {
+            width: 100% !important;
+        }
+
+        table.dataTable tbody tr {
+            background-color: #0d1117 !important;
+            color: #e6edf3 !important;
+        }
+
+        table.dataTable thead th {
+            border-bottom: 2px solid #30363d;
+            color: #8b949e;
+            vertical-align: middle;
+        }
+
+        .table-striped>tbody>tr:nth-of-type(odd)>* {
+            --bs-table-accent-bg: #161b22;
+            color: #e6edf3;
+        }
+
+        .table-hover>tbody>tr:hover>* {
+            --bs-table-accent-bg: #21262d;
+            color: white;
+        }
+
+        div.dataTables_wrapper div.dataTables_filter input {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+        }
+
+        /* Commit Message Expansion */
+        .commit-message-cell {
+            max-width: 350px;
+            white-space: normal;
+            position: relative;
+        }
+
+        .commit-content {
+            color: #e6edf3;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .commit-truncated {
+            max-height: 4.2em;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            line-clamp: 3;
+            text-overflow: ellipsis;
+        }
+
+        .show-more-link {
+            color: #58a6ff;
+            cursor: pointer;
+            font-size: 0.85em;
+            display: none;
+            margin-top: 4px;
+        }
+
+        .show-more-visible {
+            display: inline-block;
+        }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.9);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: #58a6ff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner-border mb-3" role="status"></div>
+        <h4 class="text-white">Processing Data...</h4>
+        <p class="text-secondary">Running Spark Job on Docker Container. Please wait (1-2 mins).</p>
+    </div>
+
+    <!-- Navbar -->
+    <div class="navbar d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <svg height="32" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true" fill="white" class="me-3">
+                <path fill-rule="evenodd"
+                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
+                </path>
+            </svg>
+            <span class="brand-text">ProjectSpark Analytics</span>
+        </div>
+        <div>
+            <span class="status-badge me-3" id="main-file-indicator">📂 Current Data: Loading...</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard"
+                    type="button" onclick="fetchStats()">📊 Dashboard</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-manager" type="button"
+                    onclick="loadFiles()">🗂 Data Manager</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="explorer-tab" data-bs-toggle="tab" data-bs-target="#data-explorer"
+                    type="button" onclick="loadRawData()">🔎 Data Explorer</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                <div class="d-flex justify-content-between mb-3 align-items-center">
+                    <h5 class="text-white">Analytics Overview</h5>
+                    <button class="btn btn-github btn-sm" onclick="fetchStats()">🔄 Refresh Charts</button>
+                </div>
+                <!-- Stats Row -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card stat-box p-4 text-center">
+                            <div class="stat-value" id="val-commits">0</div>
+                            <div class="stat-label">Total Commits</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-box p-4 text-center">
+                            <div class="stat-value" id="val-authors" style="color: #3fb950">0</div>
+                            <div class="stat-label">Contributors</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-box p-4 text-center">
+                            <div class="stat-value" id="val-repos" style="color: #d29922">0</div>
+                            <div class="stat-label">Repositories</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Charts Grid -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">🏆 Top Contributors</div>
+                            <div class="card-body"><canvas id="chartAuthors"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">📂 Top Repositories</div>
+                            <div class="card-body"><canvas id="chartRepos"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">🏢 Top Organizations</div>
+                            <div class="card-body"><canvas id="chartOrgs"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Charts Grid 2 -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">📧 Email Domains</div>
+                            <div class="card-body"><canvas id="chartDomains"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">⏰ Activity by Hour</div>
+                            <div class="card-body"><canvas id="chartHourly"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">📝 Message Length</div>
+                            <div class="card-body"><canvas id="chartMsg"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: DATA MANAGER -->
+            <div class="tab-pane fade" id="data-manager" role="tabpanel">
+                <div class="row">
+                    <!-- Processed Data Selection -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">✅ Processed Datasets (Ready to View)</div>
+                            <div class="card-body">
+                                <p class="text-secondary small">Select a dataset to view on Dashboard/Explorer without
+                                    re-processing.</p>
+                                <table class="table table-dark table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Dataset Name</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="processed-list-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Data Processing -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>⚡ Raw Logs (Run Spark Job)</div>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="loadFiles()">🔄 Refresh
+                                    List</button>
+                            </div>
+                            <div class="card-body">
+                                <div id="debug-status" class="alert alert-dark border-secondary mb-3 font-monospace"
+                                    style="color: #7ee787;">Waiting for action...</div>
+                                <p class="text-secondary small">Upload or select raw logs to run new analysis.</p>
+
+                                <div class="mb-3">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="fileInput" accept=".json,.gz">
+                                        <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
+                                    </div>
+                                </div>
+                                <hr class="border-secondary">
+                                <table class="table table-dark table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Filename</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="file-list-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header font-monospace">📟 Console Output</div>
+                            <div class="card-body bg-black p-3 font-monospace"
+                                style="height: 150px; overflow-y: scroll; color: #7ee787;">
+                                <pre id="spark-logs" class="m-0">System Ready.</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: DATA EXPLORER -->
+            <div class="tab-pane fade" id="data-explorer" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>🔎 Raw Data View</span>
+                        <div>
+                            <span class="badge bg-secondary me-2" id="table-file-indicator">Unknown Data</span>
+                            <button class="btn btn-sm btn-outline-light" onclick="loadRawData()">Reload</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table id="rawDataTable" class="table table-striped table-hover w-100">
+                                <thead>
+                                    <tr id="table-headers"></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        // Config
+        Chart.defaults.color = '#8b949e';
+        Chart.defaults.borderColor = '#30363d';
+        const chartInstances = {};
+
+        function updateGlobalIndicator(filename) {
+            const text = `📂 Current Data: ${filename}`;
+            document.getElementById('main-file-indicator').innerText = text;
+            document.getElementById('table-file-indicator').innerText = filename;
+            const el = document.getElementById('main-file-indicator');
+            el.style.borderColor = '#58a6ff';
+            setTimeout(() => el.style.borderColor = '#30363d', 2000);
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                if (data.active_file) updateGlobalIndicator(data.active_file);
+
+                // If error, just log to status text instead of console
+                if (data.error) {
+                    document.getElementById('main-file-indicator').innerText = "⚠️ API Error";
+                    return;
+                }
+
+                document.getElementById('val-commits').innerText = data.total_commits.toLocaleString();
+                document.getElementById('val-authors').innerText = data.unique_authors.toLocaleString();
+                document.getElementById('val-repos').innerText = data.unique_repos.toLocaleString();
+
+                renderChart('chartAuthors', 'bar', data.top_authors, '#58a6ff');
+                renderChart('chartRepos', 'bar', data.top_repos, '#3fb950');
+                renderChart('chartOrgs', 'pie', data.top_orgs, ['#7ee787', '#58a6ff', '#f0883e', '#d29922', '#ff7b72', '#a371f7']);
+                renderChart('chartDomains', 'doughnut', data.top_domains, ['#a371f7', '#58a6ff', '#3fb950']);
+                renderChart('chartHourly', 'line', data.hourly_activity, '#f0883e');
+                renderChart('chartMsg', 'bar', data.msg_length, '#ff7b72');
+            } catch (error) {
+                // Silent catch or UI update
+                document.getElementById('main-file-indicator').innerText = "⚠️ Connection Error";
+            }
+        }
+
+        function renderChart(id, type, dataObj, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (chartInstances[id]) chartInstances[id].destroy();
+            const isPie = type === 'pie' || type === 'doughnut';
+            chartInstances[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: dataObj.labels,
+                    datasets: [{
+                        label: 'Count', data: dataObj.data, backgroundColor: color, borderWidth: 1, tension: 0.3, fill: type === 'line'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: isPie } } }
+            });
+        }
+
+        // --- DATA MANAGER ---
+        async function loadFiles() {
+            try {
+                // Load Raw Files
+                const res = await fetch('/api/files');
+                const data = await res.json();
+                const tbody = document.getElementById('file-list-body');
+                tbody.innerHTML = '';
+                if (data.files) {
+                    data.files.forEach(f => {
+                        tbody.innerHTML += `
+                            <tr><td class="align-middle">${f}</td>
+                            <td class="text-end"><button type="button" class="btn btn-sm btn-outline-warning" onclick="processFile('${f}')">⚡ Run Spark</button></td></tr>`;
+                    });
+                }
+
+                // Load Processed Datasets
+                const res2 = await fetch('/api/processed_files');
+                const data2 = await res2.json();
+                const tbody2 = document.getElementById('processed-list-body');
+                tbody2.innerHTML = '';
+
+                if (data2.datasets) {
+                    data2.datasets.forEach(d => {
+                        // Cleaner display name (strip extension if it looks like a file)
+                        const displayName = d.replace(/\.csv$/, '').replace(/\.parquet$/, '');
+                        tbody2.innerHTML += `
+                            <tr><td class="align-middle text-success">${displayName} <small class="text-secondary">(${d})</small></td>
+                            <td class="text-end"><button type="button" class="btn btn-sm btn-outline-success" onclick="selectSource('${d}')">✅ Select</button></td></tr>`;
+                    });
+                }
+            } catch (e) {
+                document.getElementById('debug-status').innerText = "Error loading files";
+            }
+        }
+
+        async function uploadFile() {
+            const input = document.getElementById('fileInput');
+            if (input.files.length === 0) {
+                document.getElementById('debug-status').innerText = "Please select a file first.";
+                return;
+            }
+
+            // Simple check
+            const file = input.files[0];
+            if (!file.name.endsWith('.json') && !file.name.endsWith('.gz')) {
+                document.getElementById('debug-status').innerText = "Invalid file type. Only .json or .json.gz";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('debug-status').innerText = "Uploading...";
+
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('debug-status').innerText = "Upload Success: " + data.message;
+                    input.value = '';
+                    loadFiles();
+                } else {
+                    document.getElementById('debug-status').innerText = "Upload Error: " + data.error;
+                }
+            } catch (e) {
+                document.getElementById('debug-status').innerText = "Upload Failed: " + e.message;
+            }
+        }
+
+        async function processFile(filename) {
+            // DIRECT EXECUTION - No confirm, no console
+            const statusEl = document.getElementById('debug-status');
+            statusEl.innerText = `[1/3] Initiating job for ${filename}...`;
+            statusEl.style.color = '#e6edf3';
+
+            // Show Loading
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('spark-logs').innerText = `[INFO] Job started for ${filename}...`;
+
+            try {
+                statusEl.innerText = `[2/3] Sending Request to Server...`;
+
+                const res = await fetch('/api/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: filename })
+                });
+
+                statusEl.innerText = `[2.5/3] Waiting for response...`;
+                const data = await res.json();
+
+                document.getElementById('spark-logs').innerText = data.logs || data.details;
+
+                if (data.message) {
+                    statusEl.innerText = `[3/3] Success! Data ready.`;
+                    statusEl.style.color = '#3fb950';
+                    // alert("Success! " + data.message); // Removed alert
+                    fetchStats();
+                } else {
+                    statusEl.innerText = `[Error] ${data.error}`;
+                    statusEl.style.color = '#f85149';
+                    // alert("Error: " + data.error); // Removed alert
+                }
+            } catch (e) {
+                statusEl.innerText = `[Critical Error] ${e.message}`;
+                statusEl.style.color = '#f85149';
+                document.getElementById('spark-logs').innerText = "Error: " + e;
+                // alert("Connection Failed: " + e.message); // Removed alert
+            } finally {
+                // Hide Loading
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        async function selectSource(filename) {
+            try {
+                document.getElementById('debug-status').innerText = "Selecting dataset...";
+                const res = await fetch('/api/select_source', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: filename })
+                });
+                const data = await res.json();
+                document.getElementById('debug-status').innerText = "Dataset selected: " + filename;
+                fetchStats();
+            } catch (e) { document.getElementById('debug-status').innerText = "Selection Failed"; }
+        }
+
+        // --- DATA EXPLORER ---
+        async function loadRawData() {
+            if ($.fn.DataTable.isDataTable('#rawDataTable')) {
+                $('#rawDataTable').DataTable().destroy();
+            }
+            const res = await fetch('/api/raw_data');
+            const data = await res.json();
+
+            if (data.error) {
+                document.querySelector('#rawDataTable tbody').innerHTML = `<tr><td colspan="5" class="text-danger text-center">${data.error}</td></tr>`;
+                return;
+            }
+
+            // Render Headers
+            document.getElementById('table-headers').innerHTML = data.columns.map(c => `<th>${c}</th>`).join('');
+
+            // Identify commit_message column index
+            const msgIndex = data.columns.indexOf('commit_message');
+
+            $('#rawDataTable').DataTable({
+                data: data.data,
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100],
+                retrieve: true,
+                language: { search: "Filter:", searchPlaceholder: "Keyword..." },
+                columnDefs: [
+                    {
+                        targets: msgIndex,
+                        render: function (data, type, row) {
+                            if (type === 'display' && data) {
+                                // Count lines or length
+                                const lines = data.split('\n').length;
+                                const isLong = data.length > 80 || lines > 3;
+
+                                if (isLong) {
+                                    return `<div class="commit-message-cell mb-0">
+                                                <div class="commit-content commit-truncated">${data.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                                                <span class="show-more-link show-more-visible" onclick="toggleCommit(this)">Show more</span>
+                                            </div>`;
+                                }
+                            }
+                            return data ? data.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+                        }
+                    }
+                ]
+            });
+            fetchStats();
+        }
+
+        function toggleCommit(el) {
+            const content = el.previousElementSibling;
+            if (content.classList.contains('commit-truncated')) {
+                content.classList.remove('commit-truncated');
+                content.style.maxHeight = 'none'; // Ensure expansion
+                el.innerText = 'Show less';
+            } else {
+                content.classList.add('commit-truncated');
+                content.style.maxHeight = ''; // Revert to CSS default
+                el.innerText = 'Show more';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStats();
+            loadFiles(); // Preload file list
+        });
+    </script>
+</body>
+
+</html>

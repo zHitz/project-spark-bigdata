@@ -1,0 +1,17 @@
+# System & IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+venv/
+env/
+
+# ProjectSpark Data & Artifacts
+spark/ProjectSpark/data/
+spark/ProjectSpark/Present/
+spark/ProjectSpark/AI_help/

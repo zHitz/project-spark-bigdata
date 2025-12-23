@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  spark-master:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    user: root
+    container_name: spark-master
+    # Run as root to avoid permission issues with bind mounts if any, though jovyan is default. 
+    # But usually docker-stacks run as jovyan (1000). 
+    # We'll stick to default user but ensure commands path is correct.
+    command: /usr/local/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    volumes:
+      - /home/ubuntu/spark:/home/jovyan/work
+
+  spark-worker:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    user: root
+    container_name: spark-worker
+    command: /usr/local/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_MEMORY=1G
+    volumes:
+      - /home/ubuntu/spark:/home/jovyan/work
+    depends_on:
+      - spark-master
+
+  jupyter:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    user: root
+    container_name: jupyter-notebook
+    command: bash -c "chown -R 1000:100 /home/jovyan/.ipython && /usr/local/bin/start-notebook.sh"
+    ports:
+      - "8888:8888"
+    # mount your workspace and an ipython startup folder (explained below)
+    volumes:
+      - /home/ubuntu/spark:/home/jovyan/work
+      - /home/ubuntu/jupyter_startup:/home/jovyan/.ipython/profile_default/startup
+    environment:
+      # ensure PySpark uses the spark master in docker-compose network
+      - PYSPARK_SUBMIT_ARGS=--master spark://spark-master:7077 --conf spark.executor.memory=1g pyspark-shell
+      - PYTHONPATH=/usr/local/spark/python:/usr/local/spark/python/lib/py4j-0.10.9.7-src.zip
+      - GRANT_SUDO=yes
+    depends_on:
+      - spark-master
+      - spark-worker
