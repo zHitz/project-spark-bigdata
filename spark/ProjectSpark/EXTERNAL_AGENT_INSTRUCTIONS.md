@@ -62,6 +62,5 @@
     - Show bảng dữ liệu chi tiết (Excel-like view).
     - Thử nhập vào ô Search (ví dụ: "gmail") để lọc dữ liệu realtime.
 
-## 3. Lưu ý cho AI Agent
+## 3. Lưu ý
 - Nếu gặp lỗi "Kernel not ready" hoặc "Connection failed", hãy thử Refresh (F5) trang web và làm lại.
-- Tốc độ cuộn trang (Scroll) nên chậm rãi để người xem kịp đọc nội dung.
