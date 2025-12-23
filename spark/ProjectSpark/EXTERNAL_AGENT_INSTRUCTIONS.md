@@ -1,4 +1,4 @@
-# HƯỚNG DẪN THỰC HIỆN DEMO DÀNH CHO AI AGENT
+# HƯỚNG DẪN THỰC HIỆN DEMO
 **Mục tiêu**: Thực hiện thao tác Demo dự án "ProjectSpark" trên giao diện Web Jupyter Lab.
 
 ## 1. Môi trường & Ngữ cảnh (Context)
